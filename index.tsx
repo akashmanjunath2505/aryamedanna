@@ -1767,9 +1767,9 @@ const LabResultCard = ({ testName, labResultsString }: { testName: string, labRe
             </div>
             <div className="result-card-body">
                 {parsedResult.type === 'values' && (
-                    <div className="result-parameter-list">
+                    <div className="result-parameter-grid">
                         {parsedResult.data.map((param: { name: string, value: string }, index: number) => (
-                            <div key={index} className="result-parameter-row">
+                            <div key={index} className="result-parameter-item">
                                 <span className="result-parameter-name">{param.name}</span>
                                 <span className="result-parameter-value">{param.value}</span>
                             </div>
@@ -1780,7 +1780,7 @@ const LabResultCard = ({ testName, labResultsString }: { testName: string, labRe
                     <p className="result-report-text">{parsedResult.data}</p>
                 )}
                 {parsedResult.type === 'simple' && (
-                     <div className="result-parameter-row simple">
+                     <div className="result-parameter-item simple">
                         <span className="result-parameter-name">{testName}</span>
                         <span className="result-parameter-value">{parsedResult.data}</span>
                     </div>
@@ -1899,27 +1899,52 @@ const ProblemIdentificationPanel = React.memo(({
 });
 
 const ParsedExamDisplay = ({ examString }: { examString: string }) => {
-    // Memoize parsing logic to avoid re-computation on re-renders
+    // Memoize parsing logic to be more robust against formatting variations.
     const sections = useMemo(() => {
-        const lines = examString.split('\n').filter(line => line.trim() !== '');
-        const parsedSections: { title: string; content: string[] }[] = [];
-        let currentSection: { title: string; content: string[] } | null = null;
+        if (!examString || !examString.trim()) return [];
 
-        lines.forEach(line => {
-            const trimmedLine = line.trim();
-            if (trimmedLine.endsWith(':')) {
-                if (currentSection) {
-                    parsedSections.push(currentSection);
+        // Regex to split the string by section headers (e.g., "Vitals:", "General:").
+        // This splits the string before a line that looks like a header, keeping the header.
+        const parts = examString.split(/\n(?=[\w\s]+:\s*)/).filter(p => p.trim());
+
+        const parsedSections: { title: string; content: string[] }[] = [];
+
+        parts.forEach(part => {
+            const lines = part.trim().split('\n');
+            const titleLine = lines.shift() || ''; // Get the first line as the title
+            
+            const colonIndex = titleLine.indexOf(':');
+            if (colonIndex === -1) {
+                // This part doesn't have a recognizable title line.
+                // If a previous section exists, append this content to it.
+                if (parsedSections.length > 0) {
+                    parsedSections[parsedSections.length - 1].content.push(part.trim());
+                } else {
+                    // Otherwise, create a new section with a generic title.
+                    parsedSections.push({ title: 'Examination Findings', content: [part.trim()] });
                 }
-                currentSection = { title: trimmedLine.slice(0, -1), content: [] };
-            } else if (currentSection) {
-                currentSection.content.push(trimmedLine);
+                return;
+            }
+
+            const title = titleLine.substring(0, colonIndex).trim();
+            const firstLineContent = titleLine.substring(colonIndex + 1).trim();
+
+            // Combine content from the title line with subsequent lines
+            const content = [
+                ...(firstLineContent ? [firstLineContent] : []), 
+                ...lines.map(l => l.trim())
+            ].filter(Boolean); // Filter out any empty lines that might result
+
+            if (content.length > 0) {
+                parsedSections.push({ title, content });
             }
         });
 
-        if (currentSection) {
-            parsedSections.push(currentSection);
+        // Final fallback: If no sections were parsed but the string has content, show it all under one header.
+        if (parsedSections.length === 0 && examString.trim().length > 0) {
+            return [{ title: 'Examination Findings', content: [examString.trim()] }];
         }
+
         return parsedSections;
     }, [examString]);
 
@@ -1927,9 +1952,18 @@ const ParsedExamDisplay = ({ examString }: { examString: string }) => {
         const lowerTitle = title.toLowerCase();
         if (lowerTitle.includes('vitals')) return <IconHeart />;
         if (lowerTitle.includes('general')) return <IconUser />;
-        // Default icon for systemic examinations
         return <IconStethoscope />;
     };
+    
+    // Add a check to show a message if parsing results in no displayable content
+    if (sections.length === 0) {
+        return (
+            <div className="info-box">
+                <IconFileText />
+                Physical examination data is not available for this case.
+            </div>
+        );
+    }
 
     return (
         <div className="parsed-exam-display">
@@ -1944,17 +1978,21 @@ const ParsedExamDisplay = ({ examString }: { examString: string }) => {
                         <div className="exam-section-content">
                             {isVitals ? (
                                 <div className="vitals-grid">
-                                    {section.content.map((item, itemIndex) => {
-                                        const parts = item.split(':');
-                                        const label = parts[0]?.trim();
-                                        const value = parts.slice(1).join(':').trim();
-                                        if (!label || !value) return null;
-                                        return (
-                                            <div key={itemIndex} className="vitals-item">
-                                                <span className="vitals-label">{label}</span>
-                                                <span className="vitals-value">{value}</span>
-                                            </div>
-                                        );
+                                    {section.content.flatMap((item, itemIndex) => {
+                                        // A single line can contain multiple vitals, e.g., "BP: 120/80, HR: 72"
+                                        const individualVitals = item.split(',').map(v => v.trim()).filter(Boolean);
+                                        return individualVitals.map((vital, vitalIndex) => {
+                                            const parts = vital.split(':');
+                                            const label = parts[0]?.trim();
+                                            const value = parts.slice(1).join(':').trim();
+                                            if (!label || !value) return null; // Skip malformed entries
+                                            return (
+                                                <div key={`${itemIndex}-${vitalIndex}`} className="vitals-item">
+                                                    <span className="vitals-label">{label}</span>
+                                                    <span className="vitals-value">{value}</span>
+                                                </div>
+                                            );
+                                        }).filter(Boolean); // Filter out nulls from malformed entries
                                     })}
                                 </div>
                             ) : (
@@ -1969,6 +2007,7 @@ const ParsedExamDisplay = ({ examString }: { examString: string }) => {
         </div>
     );
 };
+
 
 const PhysicalExamPanel = React.memo(({ physicalExamString }: { physicalExamString: string }) => {
     return (
@@ -2405,14 +2444,26 @@ const PatientVisualizer = React.memo(({ latestPatientMessage }: { latestPatientM
 
 const StepwiseReasoningDisplay = ({ reasoning }: { reasoning: string }) => {
     const steps = useMemo(() => {
+        // This function cleans up each line to remove common markdown-like artifacts.
+        const cleanLine = (line: string): string => {
+            return line
+                .trim()
+                // Remove list markers like "1.", "* ", "- "
+                .replace(/^[\d\.\*\-\s]+/, '')
+                // Remove bold/italic markers like **text** or *text*
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1');
+        };
+
         return reasoning
             .split('\n')
-            .map(line => line.trim().replace(/^\d+\.\s*/, '')) // Remove leading numbers like "1. "
+            .map(cleanLine) // Use the new cleanup function
             .filter(line => line.length > 0);
     }, [reasoning]);
 
     if (steps.length === 0) {
-        return <div className="debrief-text">{reasoning}</div>;
+        // Still apply cleaning to the full block if it's not a list
+        return <div className="debrief-text">{reasoning.split('\n').map(line => line.trim()).join('\n')}</div>;
     }
 
     return (

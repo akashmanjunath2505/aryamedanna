@@ -141,7 +141,7 @@ const caseSchema = {
         physicalExam: { type: Type.STRING, description: "A string containing the physical exam findings, formatted with sections like 'Vitals:', 'General:', 'Cardiovascular:', etc." },
         labResults: {
             type: Type.STRING,
-            description: `A single string containing all lab results, formatted with each test on a new line (e.g., 'CBC: WBC 12.5, Hgb 14.1...\\nCMP: Na 138, K 4.1...'). Include results for ALL of the following tests, even if normal: ${ALL_INVESTIGATIONS_LIST.join(', ')}.`
+            description: `A single string containing all lab results. Format each test on a new line. For EACH test, provide a very concise result as a short phrase or key values. The entire result string for any single test (e.g., everything after 'Chest X-Ray:') MUST be less than 100 characters. For example: 'CBC: WBC 12.5, Hgb 14.1, Plt 250'. For imaging, provide a very short summary like 'Chest X-Ray: Minor infiltrates in right lower lobe.' instead of a long, formal report. Include results for ALL of the following tests, even if normal: ${ALL_INVESTIGATIONS_LIST.join(', ')}.`
         },
         drugRelatedProblems: {
             type: Type.ARRAY,
@@ -213,7 +213,7 @@ export async function generateCase(filters: GenerationFilters): Promise<Pharmacy
     1.  Create a patient profile that is culturally and demographically relevant to India.
     2.  Develop a detailed clinical narrative including chief complaint, history of present illness, and medication history.
     3.  **The 'physicalExam' field MUST be populated with a detailed string.** It should not be empty. Format the findings into sections like 'Vitals:', 'General:', 'Cardiovascular:', etc., and include relevant positive and negative findings.
-    4.  Ensure the 'labResults' field is a comprehensive string that includes results for ALL required tests.
+    4.  Ensure the 'labResults' field is a comprehensive string that includes results for ALL required tests, following the formatting rules in the schema (e.g., concise summaries for imaging).
     5.  Define 4 plausible Drug-Related Problems (DRPs). One must be clearly correct, while the others should be common distractors.
     6.  Write 3-5 MCQs that test knowledge directly related to the case's key learning points.
     7.  Ensure the 'competency' tag reflects a specific, relevant learning outcome from the Indian B.Pharm (PCI) curriculum.
