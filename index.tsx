@@ -2442,45 +2442,6 @@ const PatientVisualizer = React.memo(({ latestPatientMessage }: { latestPatientM
     );
 });
 
-const StepwiseReasoningDisplay = ({ reasoning }: { reasoning: string }) => {
-    const steps = useMemo(() => {
-        // This function cleans up each line to remove common markdown-like artifacts.
-        const cleanLine = (line: string): string => {
-            return line
-                .trim()
-                // Remove list markers like "1.", "* ", "- "
-                .replace(/^[\d\.\*\-\s]+/, '')
-                // Remove bold/italic markers like **text** or *text*
-                .replace(/\*\*(.*?)\*\*/g, '$1')
-                .replace(/\*(.*?)\*/g, '$1');
-        };
-
-        return reasoning
-            .split('\n')
-            .map(cleanLine) // Use the new cleanup function
-            .filter(line => line.length > 0);
-    }, [reasoning]);
-
-    if (steps.length === 0) {
-        // Still apply cleaning to the full block if it's not a list
-        return <div className="debrief-text">{reasoning.split('\n').map(line => line.trim()).join('\n')}</div>;
-    }
-
-    return (
-        <div className="stepwise-reasoning-timeline">
-            {steps.map((step, index) => (
-                <div key={index} className="reasoning-step">
-                    <div className="reasoning-step-number">{index + 1}</div>
-                    <div className="reasoning-step-content">
-                        <p>{step}</p>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-};
-
-
 const DebriefPage = () => {
     const { currentCase, simulationResult, debriefData, isGeneratingDebrief, debriefError, handleGenerateDebrief, setPage } = useAppContext();
     const [activeTab, setActiveTab] = useState('feedback');
@@ -2548,8 +2509,8 @@ const DebriefPage = () => {
                     
                     {debriefData && activeTab === 'feedback' && (
                         <div>
-                            <AccordionSection title="Stepwise Reasoning" defaultOpen={true}>
-                                <StepwiseReasoningDisplay reasoning={debriefData.stepwiseReasoning} />
+                            <AccordionSection title="Reasoning" defaultOpen={true}>
+                                <p className="debrief-text">{debriefData.reasoning}</p>
                             </AccordionSection>
                             <AccordionSection title="Learning Pearls" defaultOpen={true}>
                                 <div className="learning-pearls-grid">

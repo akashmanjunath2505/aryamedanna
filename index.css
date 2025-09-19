@@ -515,14 +515,7 @@ html[data-theme='dark'] .chat-message.system .message-bubble { background-color:
 .explanation-box { margin-top: 1.5rem; padding: 1rem 1.25rem; background-color: var(--color-bg); border-radius: var(--border-radius); border-left: 4px solid var(--color-brand-accent); }
 .explanation-box h4 { margin-bottom: 0.5rem; color: var(--color-brand-accent); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
 .explanation-box p { color: var(--color-text); font-size: 0.9rem; line-height: 1.5; }
-.stepwise-reasoning-timeline { position: relative; padding-left: 50px; }
-.stepwise-reasoning-timeline::before { content: ''; position: absolute; left: 19px; top: 20px; bottom: 20px; width: 4px; background-color: var(--color-brand-muted); border-radius: 2px; }
-.reasoning-step { position: relative; margin-bottom: 1.5rem; }
-.reasoning-step:last-child { margin-bottom: 0; }
-.reasoning-step-number { position: absolute; left: -50px; top: 0; width: 40px; height: 40px; border-radius: 50%; background-color: #fff; color: var(--color-brand); display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: var(--font-heading); z-index: 1; border: 2px solid var(--color-brand); box-shadow: var(--shadow-sm); }
-.reasoning-step-content { border-left: 4px solid var(--color-brand); border-radius: var(--border-radius); padding: 1.5rem; border: 1px solid var(--color-border); background-color: var(--color-surface); box-shadow: var(--shadow-sm); }
-.reasoning-step-content p { margin: 0; color: var(--color-text); line-height: 1.7; font-size: 1rem; }
-html[data-theme='dark'] .reasoning-step-number { background-color: var(--color-bg); border-color: var(--color-brand-accent); }
+
 /* ==========================================================================
    MOBILE & RESPONSIVE
    ========================================================================== */
